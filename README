@@ -1,0 +1,43 @@
+# JavaLens - Packet Sniffer (Mac Instructions)
+
+## Requirements
+- Java JDK 21 or higher
+  Install via Homebrew:
+  brew install openjdk@21
+
+- Maven
+  Install via Homebrew:
+  brew install maven
+
+- Npcap or libpcap
+  Mac users already have libpcap installed by default with macOS.
+  No installation needed unless it was manually removed.
+
+- JavaFX SDK 24.0.1
+  Download JavaFX SDK 24.0.1 from:
+  https://gluonhq.com/products/javafx/
+
+  After downloading:
+  - Extract it
+  - Place the javafx-sdk-24.0.1 folder inside the project root (next to pom.xml and src/)
+
+## How to Run
+
+1. Open Terminal and navigate to the project folder:
+   cd /path/to/java-lens
+
+2. Make the run.sh script executable:
+   chmod +x run.sh
+
+3. Run the application:
+   ./run.sh
+
+This will:
+- Build the project using Maven
+- Copy all dependencies into /target/dependency
+- Launch the JavaFX application
+
+## Troubleshooting
+
+- If you see a "No suitable pipeline found" error, make sure you are using JavaFX SDK matching your platform and have Java 21 installed correctly.
+- If "permission denied" happens when running ./run.sh, ensure you ran chmod +x run.sh first.

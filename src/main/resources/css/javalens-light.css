@@ -1,0 +1,96 @@
+/* ─────────────────────────────────────────────────────
+   javalens-light.css
+   ───────────────────────────────────────────────────── */
+
+/* ──────────────── Global Root ──────────────── */
+.root {
+  -fx-font-family: "Segoe UI", sans-serif;
+  -fx-font-size: 14px;
+  -fx-background-color: #fafafa;
+  -fx-text-fill: #222222;
+}
+
+/* ──────────────── Toolbar ──────────────── */
+.tool-bar {
+  -fx-background-color: rgba(255,255,255,0.8);
+  -fx-background-radius: 8;
+  -fx-padding: 8px;
+  -fx-spacing: 8px;
+}
+
+/* ──────────────── Buttons & Toggles ──────────────── */
+.button, .toggle-button {
+  -fx-background-color: #4059ad;
+  -fx-text-fill: white;
+  -fx-background-radius: 20;
+  -fx-padding: 6 12 6 12;
+  -fx-cursor: hand;
+}
+.button:hover, .toggle-button:hover {
+  -fx-background-color: derive(#4059ad, -15%);
+}
+
+/* Style the ❓ help button red in light mode */
+.table-cell > .button {
+  -fx-text-fill: red;
+  -fx-background-color: transparent;
+}
+
+/* ──────────────── TableView ──────────────── */
+.table-view {
+  -fx-background-color: transparent;
+  -fx-padding: 6px;
+  -fx-background-insets: 0;
+}
+
+/* ───── Headers ───── */
+.table-view .column-header {
+  -fx-background-color: rgba(236,236,236,0.6);
+  -fx-background-radius: 6 6 0 0;
+  -fx-border-color: transparent;
+  -fx-alignment: CENTER-LEFT;
+  -fx-text-fill: #222222;
+}
+
+/* ───── Row Styling ───── */
+.table-row-cell:even {
+  -fx-background-color: rgba(255,255,255,0.8);
+}
+.table-row-cell:odd {
+  -fx-background-color: rgba(243,243,243,0.8);
+}
+.table-row-cell:hover {
+  -fx-background-color: rgba(64,89,173,0.1);
+}
+.table-row-cell:selected {
+  -fx-background-color: #4059ad;
+}
+
+/* ───── Cell Text ───── */
+.table-cell {
+  -fx-text-fill: #222222;
+}
+.table-row-cell:selected .table-cell {
+  -fx-text-fill: white;
+}
+
+/* ───── Broadcast Row ───── */
+.table-row-cell.broadcast-row {
+  -fx-background-color: rgba(77,195,255,0.4) !important;
+}
+.table-row-cell.broadcast-row .table-cell {
+  -fx-text-fill: #222222 !important;
+}
+
+/* ───── Error Row ───── */
+.table-row-cell.error-row {
+  -fx-background-color: rgba(255,107,107,0.4) !important;
+}
+.table-row-cell.error-row .table-cell {
+  -fx-text-fill: #721c24 !important;
+}
+
+/* ───── Misc Components ───── */
+.label, .check-box, .radio-button {
+  -fx-text-fill: #222222;
+}

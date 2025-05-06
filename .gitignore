@@ -1,0 +1,28 @@
+# ────────── Build output ──────────
+/target/
+
+# ────────── IDE config ──────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ────────── OS metadata ──────────
+.DS_Store
+Thumbs.db
+
+# ────────── Java-related ──────────
+*.class
+*.log
+
+# ────────── JavaFX SDK ──────────
+/javafx-sdk-*/
+
+# ────────── Misc ──────────
+*.swp
+*.bak
+*.tmp
+
+# ────────── env ──────────
+.env
