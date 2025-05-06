@@ -25,6 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.pcap4j.packet.Packet;
+import org.pcap4j.packet.ArpPacket;
+import org.pcap4j.packet.DnsPacket;
+import org.pcap4j.packet.EthernetPacket;
+import org.pcap4j.packet.IcmpV4CommonPacket;
 import org.pcap4j.packet.IpPacket;
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.packet.UdpPacket;
@@ -35,8 +39,9 @@ import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.packet.namednumber.IpNumber;
 
 //Java Standard Library Imports
-import java.util.List;
 import java.util.Set;
+import java.util.List;
+import java.util.HashSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -392,50 +397,88 @@ public class JavaLensApp extends Application {
     }
 
     // ────────────────────── Parse Packet - Under the Hood Logic Part 2 of JavaLens ─────────────────────────────────────────────────── //
-    //This method will analyze the raw Pcap4j packet and convert it into a PacketRow object for the TableUI
+    // This method will analyze the raw Pcap4j packet and convert it into a PacketRow object for the TableUI
     private PacketRow parsePacket(Packet p) {
-        String src = "?", dst = "?", proto = p.getClass().getSimpleName(), info = "";
+        String src = "?", dst = "?", info = "";
+        String proto = "UNKNOWN";
+        Integer srcPort = null, dstPort = null, windowSize = null;
+        Set<String> tcpFlags = new HashSet<>();
+        String dnsQueryName = null;
+        Integer icmpType = null, icmpCode = null;
+        byte[] payload = null;
+
+        // ───── Detect ARP early ─────
+        if (p.contains(ArpPacket.class)) {
+            proto = "ARP";
+            info = "ARP Packet";
+        }
+
+        // ───── Extract IP-level info ─────
         if (p.contains(IpPacket.class)) {
             IpPacket ip = p.get(IpPacket.class);
-            src = ip.getHeader().getSrcAddr().getHostAddress()
-                    .replaceAll("%.*","").toLowerCase();
-            dst = ip.getHeader().getDstAddr().getHostAddress()
-                    .replaceAll("%.*","").toLowerCase();
-            IpNumber in = ip.getHeader().getProtocol();
-            proto = (in == IpNumber.TCP ? "TCP" : in == IpNumber.UDP ? "UDP" : in.name());
-    
-            if (proto.equals("TCP") && p.contains(TcpPacket.class)) {
+            src = ip.getHeader().getSrcAddr().getHostAddress().replaceAll("%.*", "").toLowerCase();
+            dst = ip.getHeader().getDstAddr().getHostAddress().replaceAll("%.*", "").toLowerCase();
+
+            IpNumber protocol = ip.getHeader().getProtocol();
+            proto = protocol.name();
+
+            if (protocol == IpNumber.TCP && p.contains(TcpPacket.class)) {
                 TcpPacket tcp = p.get(TcpPacket.class);
-                info = "TCP " + tcp.getHeader().getSrcPort() + " → " + tcp.getHeader().getDstPort();
-            } else if (proto.equals("UDP") && p.contains(UdpPacket.class)) {
+                srcPort = tcp.getHeader().getSrcPort().valueAsInt();
+                dstPort = tcp.getHeader().getDstPort().valueAsInt();
+                windowSize = (int) tcp.getHeader().getWindow();
+
+                if (tcp.getHeader().getSyn()) tcpFlags.add("SYN");
+                if (tcp.getHeader().getAck()) tcpFlags.add("ACK");
+                if (tcp.getHeader().getFin()) tcpFlags.add("FIN");
+                if (tcp.getHeader().getRst()) tcpFlags.add("RST");
+                if (tcp.getHeader().getUrg()) tcpFlags.add("URG");
+                if (tcp.getHeader().getPsh()) tcpFlags.add("PSH");
+
+                info = "TCP " + srcPort + " → " + dstPort;
+                payload = tcp.getPayload() != null ? tcp.getPayload().getRawData() : null;
+
+            } else if (protocol == IpNumber.UDP && p.contains(UdpPacket.class)) {
                 UdpPacket udp = p.get(UdpPacket.class);
-                info = "UDP " + udp.getHeader().getSrcPort() + " → " + udp.getHeader().getDstPort();
+                srcPort = udp.getHeader().getSrcPort().valueAsInt();
+                dstPort = udp.getHeader().getDstPort().valueAsInt();
+                info = "UDP " + srcPort + " → " + dstPort;
+
+                if (p.contains(DnsPacket.class)) {
+                    DnsPacket dns = p.get(DnsPacket.class);
+                    if (!dns.getHeader().getQuestions().isEmpty()) {
+                        dnsQueryName = dns.getHeader().getQuestions().get(0).getQName().getName();
+                    }
+                }
+
+                payload = udp.getPayload() != null ? udp.getPayload().getRawData() : null;
+
+            } else if (protocol == IpNumber.ICMPV4 && p.contains(IcmpV4CommonPacket.class)) {
+                IcmpV4CommonPacket icmp = p.get(IcmpV4CommonPacket.class);
+                icmpType = icmp.getHeader().getType().value() & 0xFF;
+                icmpCode = icmp.getHeader().getCode().value() & 0xFF;
+                info = "ICMP type=" + icmpType + " code=" + icmpCode;
+
+                payload = icmp.getPayload() != null ? icmp.getPayload().getRawData() : null;
             } else {
                 info = proto + " packet";
             }
-        } else {
-            info = proto + " packet";
         }
 
-        
+        // ───── MAC-level ownership check ─────
         String ethSrc = "?", ethDst = "?";
         boolean isMine = false;
         boolean isBroadcastOrMulticast = false;
 
-        // Match the MAC Address
-        if (p.contains(org.pcap4j.packet.EthernetPacket.class)) {
-            var eth = p.get(org.pcap4j.packet.EthernetPacket.class);
-
+        if (p.contains(EthernetPacket.class)) {
+            EthernetPacket eth = p.get(EthernetPacket.class);
             ethSrc = Utils.macToString(eth.getHeader().getSrcAddr().getAddress());
             ethDst = Utils.macToString(eth.getHeader().getDstAddr().getAddress());
 
-            // Broadcast MAC
-            if ("ff:ff:ff:ff:ff:ff".equals(ethDst)) {
-                isBroadcastOrMulticast = true;
-            }
-
-            // Multicast MACs (IPv4 and IPv6)
-            if (ethDst.startsWith("01:00:5e") || ethDst.startsWith("33:33") || ethDst.startsWith("01:80:c2")) {
+            if ("ff:ff:ff:ff:ff:ff".equals(ethDst) ||
+                ethDst.startsWith("01:00:5e") ||
+                ethDst.startsWith("33:33") ||
+                ethDst.startsWith("01:80:c2")) {
                 isBroadcastOrMulticast = true;
             }
 
@@ -444,23 +487,28 @@ public class JavaLensApp extends Application {
             }
         }
 
-        // IP Address
         if (!isMine && (localIPs.contains(src) || localIPs.contains(dst))) {
             isMine = true;
         }
 
+        // ───── Create and store packet row ─────
         PacketRow row = new PacketRow(
             LocalTime.now().format(TIME_FMT),
             src, dst, proto,
             String.valueOf(p.length()), info,
-            p.toString(), isMine, isBroadcastOrMulticast
+            p.toString(), isMine, isBroadcastOrMulticast,
+            srcPort, dstPort, windowSize,
+            tcpFlags, dnsQueryName,
+            icmpType, icmpCode, payload
         );
 
-        if (Utils.suspiciousPacket(row)) {
+        if (PacketInspector.suspiciousPacket(row)) {
             Database.insertPacket(row);
         }
+
         return row;
     }
+
 
     // ── Main -------------------------------------------------------------
     public static void main(String[] args) { launch(args); }

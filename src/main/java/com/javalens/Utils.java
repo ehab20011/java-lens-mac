@@ -234,8 +234,22 @@ public class Utils {
         private final String fullPacketDump;
         private final boolean isMine;
         private final boolean isBroadcastOrMulticast;
+        private Integer srcPort;
+        private Integer dstPort;
+        private Integer windowSize;
+        private Set<String> tcpFlags = Set.of();
+        private String dnsQueryName;
+        private Integer icmpType;
+        private Integer icmpCode;
+        private byte[] payload;
 
-        public PacketRow(String t, String s, String d, String pr, String l, String i, String fullDump, boolean isMine, boolean isBroadcastOrMulticast) {
+        public PacketRow(
+            String t, String s, String d, String pr, String l, String i, String fullDump,
+            boolean isMine, boolean isBroadcastOrMulticast,
+            Integer srcPort, Integer dstPort, Integer windowSize,
+            Set<String> tcpFlags, String dnsQueryName,
+            Integer icmpType, Integer icmpCode, byte[] payload
+        ) {
             time = new SimpleStringProperty(t);
             source = new SimpleStringProperty(s);
             destination = new SimpleStringProperty(d);
@@ -245,6 +259,16 @@ public class Utils {
             fullPacketDump = fullDump;
             this.isMine = isMine;
             this.isBroadcastOrMulticast = isBroadcastOrMulticast;
+            
+            //metadata for the packet
+            this.srcPort = srcPort;
+            this.dstPort = dstPort;
+            this.windowSize = windowSize;
+            this.tcpFlags = tcpFlags != null ? tcpFlags : Set.of();
+            this.dnsQueryName = dnsQueryName;
+            this.icmpType = icmpType;
+            this.icmpCode = icmpCode;
+            this.payload = payload;
         }
 
         public boolean isMine() { return isMine; }
@@ -256,6 +280,14 @@ public class Utils {
         public String getLength() { return length.get(); }
         public String getInfo() { return info.get(); }
         public String getFullPacketDump() { return fullPacketDump; }
+        public Integer getSrcPort() { return srcPort; }
+        public Integer getDstPort() { return dstPort; }
+        public Integer getWindowSize() { return windowSize; }
+        public boolean hasFlag(String flag) { return tcpFlags.contains(flag); }
+        public String getDnsQueryName() { return dnsQueryName; }
+        public Integer getIcmpType() { return icmpType; }
+        public Integer getIcmpCode() { return icmpCode; }
+        public byte[] getPayload() { return payload; }
         
         public boolean matches(String q) {
             String lower = q.toLowerCase();
@@ -330,22 +362,4 @@ public class Utils {
         }
         return sb.toString();
     }
-
-    // [ BIG TODO ]: Define what makes a packet suspicious? 
-    public static boolean suspiciousPacket(PacketRow row) {
-        // suspicious if it's TCP on a non-standard port
-        if ("TCP".equalsIgnoreCase(row.getProtocol())) {
-            String info = row.getInfo();
-            return info.contains(" → ") && (
-                info.contains(":1337") || // odd ports
-                info.contains(":666") ||
-                info.contains(":31337") ||
-                info.contains(":0") // invalid ports
-            );
-        }
-    
-        //ADD DNS exfiltration detection and ICMP abuse next ? maybe..
-        return false;
-    }
-
 }
