@@ -25,12 +25,8 @@ import java.util.List;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.packet.ArpPacket;
-import org.pcap4j.packet.DnsPacket;
 import org.pcap4j.packet.EthernetPacket;
-import org.pcap4j.packet.IcmpV4EchoPacket;
 import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.TcpPacket;
 
 public class Utils {
 
@@ -336,40 +332,19 @@ public class Utils {
     }
 
     // [ BIG TODO ]: Define what makes a packet suspicious? 
-    public static boolean suspiciousPacket(PacketRow row, Packet p) {
-        String proto = row.getProtocol();
-        // 1) odd TCP ports
-        if ("TCP".equalsIgnoreCase(proto)) {
+    public static boolean suspiciousPacket(PacketRow row) {
+        // suspicious if it's TCP on a non-standard port
+        if ("TCP".equalsIgnoreCase(row.getProtocol())) {
             String info = row.getInfo();
-            if (info.matches(".* → (1337|666|31337|0)")) return true;
+            return info.contains(" → ") && (
+                info.contains(":1337") || // odd ports
+                info.contains(":666") ||
+                info.contains(":31337") ||
+                info.contains(":0") // invalid ports
+            );
         }
-
-        // 2) SYN / NULL / XMAS scans
-        if (p.contains(TcpPacket.class)) {
-            var h = p.get(TcpPacket.class).getHeader();
-            if (h.getSyn() && !h.getAck()) return true;
-            if (!h.getFin() && !h.getSyn() && !h.getRst() && !h.getPsh() && !h.getAck() && !h.getUrg())
-            return true;
-            if (h.getFin() && h.getPsh() && h.getUrg()) return true;
-        }
-
-        // 3) DNS exfil
-        if ("UDP".equalsIgnoreCase(proto) && p.contains(DnsPacket.class)) {
-            var q = p.get(DnsPacket.class).getHeader().getQuestions().get(0).getQName().toString();
-            if (q.length() > 80 || q.matches(".*[A-Za-z0-9+/=]{40,}.*")) return true;
-        }
-
-        // 4) ICMP floods or large payloads
-        if (p.contains(IcmpV4EchoPacket.class)
-            && p.get(IcmpV4EchoPacket.class).getPayload().length() > 512) {
-            return true;
-        }
-
-        // 5) ARP / other suspicious link-layer
-        if (p.contains(ArpPacket.class)) return true;
-
-        // 6) rate-based logic: (implement separately)
-
+    
+        //ADD DNS exfiltration detection and ICMP abuse next ? maybe..
         return false;
     }
 
