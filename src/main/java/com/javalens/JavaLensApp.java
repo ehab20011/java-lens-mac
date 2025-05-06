@@ -157,7 +157,6 @@ public class JavaLensApp extends Application {
     }
 
     private Image icon() { return new Image(getClass().getResourceAsStream("/images/java-lens-nobg.png")); }
-
     // ────────────────────── Build Tool Bar Logic ─────────────────────────────────────────────────── //
     private ToolBar buildToolbar() {
         //Logo
@@ -261,9 +260,10 @@ public class JavaLensApp extends Application {
         table.getColumns().addAll(columns);
         table.getColumns().add(helpCol());
 
-        //On mouse click if a user clicks a non empty row, a dialog opens up showing the full packet details with .getItem()
+        
         table.setRowFactory(tv -> new TableRow<>() {
             @Override
+            //Update the coloring of row based on [ MINE / BROADCAST / NOT-MINE ]
             protected void updateItem(PacketRow row, boolean empty) {
                 super.updateItem(row, empty);
             
@@ -281,6 +281,7 @@ public class JavaLensApp extends Application {
             }            
             
             {
+                //On mouse click if a user clicks a non empty row, a dialog opens up showing the full packet details with .getItem()
                 setOnMouseClicked(ev -> {
                     if (ev.getClickCount() == 2 && !isEmpty()) showDetails(getItem());
                 });

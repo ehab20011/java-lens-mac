@@ -13,20 +13,20 @@ import java.util.Set;
 import java.awt.Taskbar;
 import javax.imageio.ImageIO;
 
+import java.util.List;
+import java.util.HashSet;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
+import java.net.SocketException;
+import java.net.NetworkInterface;
 
 import org.pcap4j.core.Pcaps;
-import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.Packet;
+import org.pcap4j.packet.EthernetPacket;
+import org.pcap4j.core.PcapNativeException;
+import org.pcap4j.core.PcapNetworkInterface;
 
 public class Utils {
 
