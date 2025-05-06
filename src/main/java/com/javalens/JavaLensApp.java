@@ -24,8 +24,6 @@ import javafx.collections.transformation.FilteredList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.javalens.Utils.PacketRow;
-
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.IpPacket;
 import org.pcap4j.core.PcapHandle;
@@ -53,6 +51,7 @@ import java.time.format.DateTimeFormatter;
 //Utility Functions and URL
 import java.net.URL;
 import static com.javalens.Utils.*;
+import com.javalens.Utils.PacketRow;
 
 public class JavaLensApp extends Application {
     // Logger
