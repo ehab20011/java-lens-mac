@@ -1,61 +1,18 @@
 package com.javalens;
 
-import java.net.URL;
-
 import java.util.ArrayList;
 
-//JavaFX Components and Application Framework
-import javafx.stage.Stage;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.geometry.Insets;
-import javafx.scene.layout.HBox;
-import javafx.scene.image.Image;
-import javafx.scene.input.KeyCode;
-import javafx.application.Platform;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.Priority;
-import javafx.application.Application;
-import javafx.scene.layout.BorderPane;
-import javafx.animation.AnimationTimer;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.collections.transformation.FilteredList;
-
 //PCap4j - Packet Capturing and Networking Classes
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.javalens.Utils.PacketRow;
-
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.IpPacket;
 import org.pcap4j.core.PcapHandle;
-import org.pcap4j.packet.UdpPacket;
 import org.pcap4j.core.PcapAddress;
-import org.pcap4j.packet.TcpPacket;
-import org.pcap4j.core.NotOpenException;
-import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.packet.namednumber.IpNumber;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 
 //Java Standard Library Imports
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import java.time.LocalTime;
-import java.io.EOFException;
-import java.time.format.DateTimeFormatter;
 
 
 //Utility Functions

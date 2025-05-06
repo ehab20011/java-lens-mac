@@ -1,7 +1,5 @@
 package com.javalens;
 
-import java.net.URL;
-
 //JavaFX Components and Application Framework
 import javafx.stage.Stage;
 import javafx.scene.Scene;
@@ -28,19 +26,15 @@ import org.slf4j.LoggerFactory;
 
 import com.javalens.Utils.PacketRow;
 
-import java.util.ArrayList;
-import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.IpPacket;
 import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapAddress;
 import org.pcap4j.packet.UdpPacket;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.core.NotOpenException;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.packet.namednumber.IpNumber;
-import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 
 //Java Standard Library Imports
 import java.util.List;
@@ -56,8 +50,10 @@ import java.time.LocalTime;
 import java.io.EOFException;
 import java.time.format.DateTimeFormatter;
 
-//Utility Functions
+//Utility Functions and URL
+import java.net.URL;
 import static com.javalens.Utils.*;
+
 public class JavaLensApp extends Application {
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(JavaLensApp.class);
@@ -128,17 +124,26 @@ public class JavaLensApp extends Application {
         stage.setScene(scene);
         stage.show();
 
-        // THEME TOGGLING LOGIC
+        //THEME TOGGLING LOGIC
         themeToggle.setOnAction(e -> {
             scene.getStylesheets().clear();
-            if (themeToggle.isSelected()) {            // DARK
-                scene.getStylesheets().add(
-                    getClass().getResource("/css/javalens-dark.css").toExternalForm());
-                themeToggle.setText("☀️ Light");
-            } else {                                   // LIGHT
-                scene.getStylesheets().add(
-                    getClass().getResource("/css/javalens-light.css").toExternalForm());
-                themeToggle.setText("🌙 Dark");
+        
+            if (themeToggle.isSelected()) {
+                URL dark = getClass().getResource("/css/javalens-dark.css");
+                if (dark != null) {
+                    scene.getStylesheets().add(dark.toExternalForm());
+                    themeToggle.setText("☀️ Light");
+                } else {
+                    logger.error("Dark theme not found: /css/javalens-dark.css");
+                }
+            } else {
+                URL light = getClass().getResource("/css/javalens-light.css");
+                if (light != null) {
+                    scene.getStylesheets().add(light.toExternalForm());
+                    themeToggle.setText("🌙 Dark");
+                } else {
+                    logger.error("Light theme not found: /css/javalens-light.css");
+                }
             }
         });
 
@@ -163,6 +168,8 @@ public class JavaLensApp extends Application {
         //Dropdown ComoboBox - Initially set to e0 if found. Else it fallsback to the first device.
         ifaceBox = new ComboBox<>();
         List<PcapNetworkInterface> devices = findAllDevs();
+        ifaceBox.getItems().addAll(devices);
+
         for (PcapNetworkInterface dev : devices) {
             if (dev.getName().equals("en0")) {
                 ifaceBox.getSelectionModel().select(dev);
@@ -233,7 +240,7 @@ public class JavaLensApp extends Application {
         return tb;
     }
 
-    // ────────────────────── Table Logic ─────────────────────────────────────────────────── //
+   // ────────────────────── Table Logic ─────────────────────────────────────────────────── //
     private TableView<PacketRow> buildTable() {
         //Take the filtered live search results and wrap them in a sorted list so when the user clicks a column header, the rows are actually sorted visually
         SortedList<PacketRow> sorted = new SortedList<>(filteredRows);
@@ -241,7 +248,7 @@ public class JavaLensApp extends Application {
         table.setItems(sorted); //display them now
 
         //auto-size
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN );
 
         // PACKET: [ TIME | SRC | DST | POROT | LEN | INFO ] 
         List<TableColumn<PacketRow, String>> columns = List.of(
@@ -256,12 +263,29 @@ public class JavaLensApp extends Application {
         table.getColumns().add(helpCol());
 
         //On mouse click if a user clicks a non empty row, a dialog opens up showing the full packet details with .getItem()
-        table.setRowFactory(tv -> {
-            TableRow<PacketRow> row = new TableRow<>();
-            row.setOnMouseClicked(ev -> {
-                if (ev.getClickCount() == 2 && !row.isEmpty()) showDetails(row.getItem());
-            });
-            return row;
+        table.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(PacketRow row, boolean empty) {
+                super.updateItem(row, empty);
+            
+                getStyleClass().removeAll("broadcast-row", "error-row", "mine-row");
+            
+                if (row == null || empty) {
+                    // no style
+                } else if (row.isMine()) {
+                    getStyleClass().add("mine-row");
+                } else if (row.isBroadcastOrMulticast()) {
+                    getStyleClass().add("broadcast-row");
+                } else {
+                    getStyleClass().add("error-row");
+                }
+            }            
+            
+            {
+                setOnMouseClicked(ev -> {
+                    if (ev.getClickCount() == 2 && !isEmpty()) showDetails(getItem());
+                });
+            }
         });
         return table;
     }
@@ -301,7 +325,7 @@ public class JavaLensApp extends Application {
         return c;
     }
 
-    // ────────────────────── Capture Control - Under the Hood Logic of JavaLens ─────────────────────────────────────────────────── //
+   // ────────────────────── Capture Control - Under the Hood Logic of JavaLens ─────────────────────────────────────────────────── //
     //Toggles the capture on/off button when the user clicks the button or does command+R
     private void toggleCapture() {
         if (capturing.get()) stopCapture();
@@ -437,6 +461,7 @@ public class JavaLensApp extends Application {
         }
         return row;
     }
+
     // ── Main -------------------------------------------------------------
     public static void main(String[] args) { launch(args); }
 }
