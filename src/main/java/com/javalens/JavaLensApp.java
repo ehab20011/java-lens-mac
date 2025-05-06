@@ -456,7 +456,7 @@ public class JavaLensApp extends Application {
             p.toString(), isMine, isBroadcastOrMulticast
         );
 
-        if (Utils.suspiciousPacket(row)) {
+        if (Utils.suspiciousPacket(row) || row.isBroadcastOrMulticast()) {
             Database.insertPacket(row);
         }
         return row;

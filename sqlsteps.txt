@@ -1,0 +1,87 @@
+# JavaLens Database Setup
+
+This README provides instructions for setting up the PostgreSQL database required for the JavaLens application.
+
+## Prerequisites
+
+- PostgreSQL installed on your system
+- pgAdmin 4 (optional, for GUI method)
+
+## Database Configuration
+
+JavaLens requires a PostgreSQL database with the following configuration:
+
+```
+Database Name: javalens_db
+Username: javalens_user
+Password: your_password_here (replace with your secure password)
+```
+
+## Setup Methods
+
+### Option 1: Using pgAdmin 4 GUI
+
+1. Open pgAdmin 4
+2. Expand your server in the left panel
+3. Create the user:
+   - Right-click on "Login/Group Roles" → Create → Login/Group Role
+   - In the "General" tab: Set "Role Name" to `javalens_user`
+   - In the "Definition" tab: Set a password
+   - In the "Privileges" tab: Check "Can login"
+   - Click "Save"
+4. Create the database:
+   - Right-click on "Databases" → Create → Database
+   - Set "Database name" to `javalens_db`
+   - Set "Owner" to `javalens_user`
+   - Click "Save"
+
+### Option 2: Using SQL Commands
+
+Execute the following SQL commands in a PostgreSQL query tool:
+
+```sql
+-- Create the user
+CREATE USER javalens_user WITH PASSWORD 'your_password_here';
+
+-- Allow login
+ALTER ROLE javalens_user WITH LOGIN;
+
+-- Create the database
+CREATE DATABASE javalens_db OWNER javalens_user;
+```
+
+## Permissions Setup
+
+After creating the database, execute these commands to set the proper permissions:
+
+```sql
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE captured_packets TO javalens_user;
+GRANT USAGE, SELECT, UPDATE ON SEQUENCE captured_packets_id_seq TO javalens_user;
+```
+
+## Environment Configuration
+
+Add these environment variables to your application:
+
+```
+DB_URL=jdbc:postgresql://localhost:5432/javalens_db
+DB_USER=javalens_user
+DB_PASSWORD=your_password_here
+```
+
+## Verification
+
+To verify the setup, you can connect to the database using the following command:
+
+```bash
+psql -h localhost -d javalens_db -U javalens_user
+```
+
+Enter your password when prompted. If you connect successfully, the database setup is complete.
+
+## Troubleshooting
+
+If you encounter connection issues:
+1. Check if PostgreSQL service is running
+2. Verify that the user has proper permissions
+3. Ensure the correct password is being used in connection strings
